@@ -68,7 +68,7 @@ def llm_as_judge_gpt_pairwise(df, dest_path):
 #m = "gemini"
 
 
-m = "chatgpt"
+m = "claude"
 df = load_data_jsonl(f"data/dataset_completion_{m}.jsonl")
 llm_as_judge_gpt(df, f"data/llm_as_judge_gpt_{m}.jsonl")
 

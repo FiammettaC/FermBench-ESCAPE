@@ -13,12 +13,12 @@ def return_responses(df, dest_path):
     for question in tqdm(df["question"].iloc[62:]):
         completion = {}
         response = client.models.generate_content(
-            model="gemini-3-flash-preview", contents=question)
+            model="gemini-2.5-flash-lite", contents=question)
         completion[question] = response.text
         with open(dest_path, 'a') as f:
             f.write(json.dumps([completion]) + '\n')
 
 # Run code
 data_path = "data/dataset_curated.xlsx"
-output_path = "data/dataset_completion_gemini.jsonl"
+output_path = "data/dataset_completion_gemini_25_lite.jsonl"
 return_responses(load_data(data_path), output_path)
