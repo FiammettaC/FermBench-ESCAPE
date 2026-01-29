@@ -116,17 +116,6 @@ def llm_as_judge_gpt_pairwise(df, dest_path):
         completion[c] = response.output_text
         with open(dest_path, 'a') as f:
             f.write(json.dumps([completion]) + '\n')
- 
-
-
-#df = load_data("data/dataset_merged_all_reruns.xlsx")
-#m = "gemini"
-
-
-#m = "gemini"
-#df = load_data_jsonl(f"data/dataset_completion_{m}.jsonl")
-#llm_as_judge_gpt(df, f"data/llm_as_judge_gpt_{m}.jsonl")
-#models = ['chatgpt', 'claude', 'deepseek', 'lechat', 'gemini'] #'gemini', 
 
 def calculate_parameters(models, judge):
     #for model in models:
@@ -171,14 +160,8 @@ def calculate_parameters(models, judge):
         print(model)
         print(dict) 
         print(missed) 
-                    
-                    
-                    
-#df = pd.read_excel("data/pairwise_dataset.xlsx")
-#llm_as_judge_gpt_pairwise(df, "data/ll_as_judge_pairwise_gpt4o.jsonl")
-   
+           
 def calculate_parameters_topics(models, judge):
-    
     for model in models:
         df_params = pd.DataFrame()
         key = []
@@ -191,7 +174,7 @@ def calculate_parameters_topics(models, judge):
         ins = []
         oq = []
         missed =  []
-        data = load_data_judge(f"data/llm_as_judge_{judge}_{model}_v2.jsonl")
+        data = load_data_judge(f"data/llm_as_judge_{judge}_{model}.jsonl")
         for idx, d in enumerate(data):
             numbers = re.findall(r'[+-]?\d*\.?\d+', d['value'])
             numbers = [round(float(n)) for n in numbers]
@@ -220,17 +203,8 @@ def calculate_parameters_topics(models, judge):
         df_params['overall_quality'] = oq  
         df_params.to_excel(f"data/result_{judge}_{model}.xlsx", index=False)
     return df_params
-                    
-#df_params = calculate_parameters_topics(models, "claude")
-#print(df_params)
-
-#calculate_parameters(['gemini_v2'], "claude")
-# Pairwise analysis
-#df = pd.read_excel("data/pairwise_dataset.xlsx")
-#llm_as_judge_gpt_pairwise(df, "data/ll_as_judge_pairwise_gpt4o.jsonl")
 
 def topic_mapping(models, judge):
-    
     theme_mapping = {
         # Modelling & Optimization
         "Modelling": "Modelling & Optimization",
@@ -278,19 +252,18 @@ def topic_mapping(models, judge):
     df_topics = pd.read_excel("data/dataset_curated.xlsx")
     for model in models:
         print(model)
-        df_params = pd.read_excel(f"data/result_{judge}_{model}.xlsx")
+        #df_params = pd.read_excel(f"data/result_{judge}_{model}.xlsx")
+        df_params = calculate_parameters_topics([model], judge)
         df_params_merged = df_params.join(df_topics.set_index('question'), on='key', how='left')        
         df_params_merged['theme'] = df_params_merged['topic'].map(theme_mapping)
-        df_params_merged.to_excel(f"data/result_{judge}_{model}_with_theme.xlsx", index=False)
+        #df_params_merged.to_excel(f"data/result_{judge}_{model}_with_theme.xlsx", index=False)
     return df_params_merged
   
-models = ['chatgpt', 'claude', 'deepseek', 'lechat', 'gemini'] #'gemini',   
-#topic_mapping(models, 'claude')
-
 def calculate_parameters_by_theme(models, judge):
     for model in models:
         print(model)
-        df_params = pd.read_excel(f"data/result_{judge}_{model}_with_theme.xlsx")
+        #df_params = pd.read_excel(f"data/result_{judge}_{model}_with_theme.xlsx")
+        df_params = topic_mapping([model], judge)
         df_new = df_params.groupby(["theme"]).agg({"factual_accuracy": ["mean"], 
                                                  "comprehensiveness": ["mean"], 
                                                  "coherence": ["mean"], 
@@ -298,27 +271,40 @@ def calculate_parameters_by_theme(models, judge):
                                                  "readability": ["mean"], 
                                                  "helpfulness": ["mean"],
                                                  "insightfulness": ["mean"], 
-                                                 "overall_quality": ["mean"]}).to_excel(f"data/result_{judge}_{model}_aggregated.xlsx")
-        
+                                                 "overall_quality": ["mean"]})
+        #df_new.to_excel(f"data/result_{judge}_{model}_aggregated.xlsx") 
     return df_new
-#calculate_parameters_by_theme(models, 'claude')
 
-df_aggregated = pd.DataFrame()
-df_aggregated['theme'] = ["Biochemistry & Operations",
-                          "Bioprocess Engineering",
-                          "Fundamentals",
-                          "Modelling & Optimization",
-                          "Organisms & Cell Biology",
-                          "Sector Applications"]
-for judge in ['claude', 'gpt']:
-    print(judge)
-    for model in models:
-        print(model)
-        df = pd.read_excel(f"data/result_{judge}_{model}_aggregated.xlsx")
-        #print(df.iloc[2,0])
-        print(df['overall_quality'].iloc[2:])
-        #print(df.loc[0].value_counts())
-        df_aggregated[f'scores_{judge}_{model}'] = df['overall_quality'].iloc[2:].tolist()
-df_aggregated.to_excel("data/final_results_aggregated.xlsx", index=False)
+def aggregate_final_results(models):
+    df_aggregated = pd.DataFrame()
+    df_aggregated['theme'] = ["Biochemistry & Operations",
+                            "Bioprocess Engineering",
+                            "Fundamentals",
+                            "Modelling & Optimization",
+                            "Organisms & Cell Biology",
+                            "Sector Applications"]
+    for judge in ['claude', 'gpt']:
+        print(judge)
+        for model in models:
+            print(model)
+            #df = pd.read_excel(f"data/result_{judge}_{model}_aggregated.xlsx")
+            df = calculate_parameters_by_theme([model], judge)
+            #print(df["overall_quality"].values.tolist())
+            df_aggregated[f'scores_{judge}_{model}'] = df['overall_quality'].values
+    df_aggregated.to_excel("data/final_results_aggregated.xlsx", index=False)
+    return df_aggregated
         
-    
+# RUN CODE 
+#models = ['chatgpt', 'claude', 'deepseek', 'lechat', 'gemini_']  # uncomment this
+#m = "gemini"
+#df = load_data_jsonl(f"data/dataset_completion_{m}.jsonl")
+#llm_as_judge_claude(df, f"data/llm_as_judge_claude_{m}.jsonl")
+#llm_as_judge_gpt(df, f"data/llm_as_judge_gpt_{m}.jsonl")
+#df = pd.read_excel("data/pairwise_dataset.xlsx")
+#llm_as_judge_gpt_pairwise(df, "data/ll_as_judge_pairwise_gpt4o.jsonl")
+#calculate_parameters(['gemini'], 'gpt')
+#df_params = calculate_parameters_topics(models, "claude")
+#calculate_parameters(['gemini'], "claude")
+#topic_mapping(models, 'claude')
+#calculate_parameters_by_theme(models, 'claude') 
+#aggregate_final_results(models) # uncomment this

@@ -12,7 +12,7 @@ def load_data(path):
     return df
 
 def return_responses(df, dest_path):
-    for question in tqdm(df["question"].iloc[41:]):
+    for question in tqdm(df["question"]):
         completion = {}
         # Make a simple request
         response = client.responses.create(
