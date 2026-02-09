@@ -1,5 +1,6 @@
 import pandas as pd
 import json
+from functools import reduce
 
 def load_data_jsonl(path):
     data = []
@@ -16,7 +17,6 @@ def merge_responses(path):
     answers3 = pd.DataFrame(load_data_jsonl(f'{path}_lechat.jsonl')).rename(columns={"value": "value_lechat"}).drop_duplicates(subset='key', keep='first')
     answers4 = pd.DataFrame(load_data_jsonl(f'{path}_chatgpt.jsonl')).rename(columns={"value": "value_chatgpt"}).drop_duplicates(subset='key', keep='first')
     answers5 = pd.DataFrame(load_data_jsonl(f'{path}_claude.jsonl')).rename(columns={"value": "value_claude"}).drop_duplicates(subset='key', keep='first')
-
 
     data_frames = [answers1, answers2, answers3, answers4, answers5]
     df_merged = reduce(lambda  left,right: pd.merge(left,right,on=['key']), data_frames)
